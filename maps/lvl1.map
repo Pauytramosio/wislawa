@@ -1,0 +1,3 @@
+platforms! {
+    0, %height - 32, %width, 32;
+}
