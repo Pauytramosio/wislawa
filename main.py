@@ -61,7 +61,6 @@ class Player:
     def update(self, screen, platforms) -> None:
         next_hitbox = self.hitbox.copy()
         keys = pygame.key.get_pressed()
-        if keys[self.keys.up]: self.grav = -10
         
         if keys[self.keys.left]:
             next_hitbox.x -= self.speed
@@ -74,28 +73,33 @@ class Player:
                 if platform.colliderect(next_hitbox):
                     next_hitbox.right = platform.hitbox.x
         
-        self.grav += 1
-        if self.grav > 0:
+        on_ground = False
+        for platform in platforms:
+            if platform.colliderect(pygame.Rect(next_hitbox.x, next_hitbox.y + 1, next_hitbox.width, next_hitbox.height)):
+                on_ground = True
+                next_hitbox.bottom = platform.hitbox.top
+                break
+        
+        if (not on_ground) or (on_ground and self.grav < 0):
+            self.grav += 1
             next_hitbox.y += self.grav
             for platform in platforms:
                 if platform.colliderect(next_hitbox):
                     next_hitbox.bottom = platform.hitbox.top
                     self.grav = 0
+                    break
         else:
-            next_hitbox.y += self.grav
-            for platform in platforms:
-                if platform.colliderect(next_hitbox):
-                    next_hitbox.top = platform.hitbox.bottom
-                    self.grav = 0
+            self.hp -= self.grav
+            self.grav = -20 if keys[self.keys.up] else 0
 
         self.hitbox = next_hitbox
+        print(keys[self.keys.up])
 
 def main() -> None:
     pygame.init()
 
-    GLBL_KYS = Keys({
+    KEYS = Keys({
         "quit": pygame.K_b,
-        "toggle debug": pygame.K_t,
     })
 
     debug: bool = False
@@ -120,12 +124,13 @@ def main() -> None:
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYDOWN:
-                if GLBL_KYS.keys["quit"] == event.key:
+                if KEYS.keys["quit"] == event.key:
                     running = False
-                elif GLBL_KYS.keys["toggle debug"] == event.key:
-                    debug = not debug
 
         player.update(screen, platforms)
+
+        keys_pressed = pygame.key.get_pressed()
+        debug = keys_pressed[pygame.K_t]
 
         screen.blit(BG_IMG, (0, 0))
         player.draw(screen, debug)
