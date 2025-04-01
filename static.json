@@ -1,5 +1,9 @@
 {
   "screen-size": [800, 600],
   "screen-title": "Wisława",
-  "background": "background.jpg"
+  "background": "background.jpg",
+  "images": {
+    "heart": "heart.jpg",
+    "player": "player.jpg"
+  }
 }

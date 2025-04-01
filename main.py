@@ -5,6 +5,18 @@ import pygame
 import static
 import sys
 
+from maps import *
+
+#%% imgs
+
+images = {
+    name: pygame.image.load(static.static["images"][name])
+    for name in static.static["images"]
+}
+print("loaded images:", images)
+
+#%%
+
 class Keys:
     def __init__(self, keys: dict[str, int]) -> None:
         self.keys = keys
@@ -16,15 +28,7 @@ class MovementKeys(Keys):
         self.down = d
         self.right = r
 
-
-class Platform:
-    def __init__(self, x: int, y: int, width: int, height: int, color: pygame.Color = pygame.Color(0, 0, 0)) -> None:
-        self.hitbox = pygame.Rect(x, y, width, height)
-        self.color = color
-    def draw(self, screen: pygame.Surface) -> None:
-        pygame.draw.rect(screen, self.color, self.hitbox)
-    def colliderect(this, other):
-        return this.hitbox.colliderect(other)
+def maxmin(val, max, min): return max if val > max else min if val < min else val
 
 class Player:
     def __init__(self, x: int, y: int, color: pygame.Color = pygame.Color(128, 128, 0), keys: MovementKeys = MovementKeys(), speed: int=3) -> None:
@@ -33,23 +37,31 @@ class Player:
         self.keys = keys
         self.speed = speed
         self.grav: int = 0
+        self.hp: int = 20
     def draw(self, screen: pygame.Surface, debug) -> None:
-        pygame.draw.rect(screen, self.color, self.hitbox)
+        screen.blit(images["player"], (self.hitbox.x, self.hitbox.y))
         if debug:
+            pygame.draw.rect(screen, self.color, self.hitbox)
+
             pygame.draw.line(screen, pygame.Color(0, 255, 0), (self.hitbox.x, 0), (self.hitbox.x, screen.get_width()), 5)
             pygame.draw.line(screen, pygame.Color(255, 0, 0), (self.hitbox.right, 0), (self.hitbox.right, screen.get_width()), 5)
             pygame.draw.line(screen, pygame.Color(0, 255, 255), (0, self.hitbox.y), (screen.get_width(), self.hitbox.y), 5)
             pygame.draw.line(screen, pygame.Color(255, 128, 196), (0, self.hitbox.bottom), (screen.get_width(), self.hitbox.bottom), 5)
 
             text = pygame.font.SysFont("courier new", 24).render(f"x: {self.hitbox.x}", True, pygame.Color(255, 255, 255))
-            screen.blit(text, (0, self.hitbox.y - text.get_height()))
+            screen.blit(text, (0, maxmin(self.hitbox.y - text.get_height(), screen.get_height() - text.get_height(), 0))) # Add padding (because of the height of the line)
             text = pygame.font.SysFont("courier new", 24).render(f"y: {self.hitbox.y}", True, pygame.Color(255, 255, 255))
-            screen.blit(text, (self.hitbox.right + 7, 0)) # Add padding (because of the width of the line)
+            screen.blit(text, (maxmin(self.hitbox.right + 7, screen.get_width() - text.get_width(), 0), 0)) # Add padding (because of the width of the line)
+
+
+            pygame.draw.rect(screen, self.color, self.hitbox)
+            text = pygame.font.SysFont("courier new", 24).render(f"hp: {self.hp}", True, pygame.Color(255, 255, 255))
+            screen.blit(text, (self.hitbox.x + 5, self.hitbox.y + 5))
+            
     def update(self, screen, platforms) -> None:
         next_hitbox = self.hitbox.copy()
         keys = pygame.key.get_pressed()
-        if keys[self.keys.up]:
-            self.grav = -10
+        if keys[self.keys.up]: self.grav = -10
         
         if keys[self.keys.left]:
             next_hitbox.x -= self.speed
@@ -121,6 +133,7 @@ def main() -> None:
         pygame.display.update()
         clock.tick(60)
     pygame.quit()
-    sys.exit()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
+    sys.exit()
