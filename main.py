@@ -7,6 +7,8 @@ import sys
 
 from maps import *
 
+from enum import Enum
+
 #%% imgs
 
 images = {
@@ -16,6 +18,10 @@ images = {
 print("loaded images:", images)
 
 #%%
+
+class Gamemode(Enum):
+    PLAY = 1
+    WIN  = 2
 
 class Keys:
     def __init__(self, keys: dict[str, int]) -> None:
@@ -40,6 +46,11 @@ class Player:
         self.hp: int = 20
     def draw(self, screen: pygame.Surface, debug) -> None:
         screen.blit(images["player"], (self.hitbox.x, self.hitbox.y))
+        heartimg = images["heart"]
+        pen = 0
+        for i in range(self.hp):
+            screen.blit(heartimg, (pen, 0))
+            pen += heartimg.get_width()
         if debug:
             pygame.draw.rect(screen, self.color, self.hitbox)
 
@@ -86,16 +97,19 @@ class Player:
             for platform in platforms:
                 if platform.colliderect(next_hitbox):
                     next_hitbox.bottom = platform.hitbox.top
+                    self.hp -= self.grav // static.static["player-damage-modifier"]
                     self.grav = 0
                     break
         else:
-            self.hp -= self.grav
+            self.hp -= self.grav // static.static["player-damage-modifier"]
             self.grav = -20 if keys[self.keys.up] else 0
 
         self.hitbox = next_hitbox
 
 def main() -> None:
     pygame.init()
+
+    gamemode: Gamemode = Gamemode.PLAY
 
     KEYS = Keys({
         "quit": pygame.K_b,
@@ -125,19 +139,24 @@ def main() -> None:
             if event.type == pygame.KEYDOWN:
                 if KEYS.keys["quit"] == event.key:
                     running = False
-
-        player.update(screen, platforms)
-
+        
         keys_pressed = pygame.key.get_pressed()
         debug = keys_pressed[pygame.K_t]
 
-        screen.blit(BG_IMG, (0, 0))
-        player.draw(screen, debug)
-        [platform.draw(screen) for platform in platforms]
+        if gamemode == Gamemode.PLAY:
+            player.update(screen, platforms)
+            gamemode = Gamemode.WIN if player.hp <= 0 else gamemode
+            screen.blit(BG_IMG, (0, 0))
+            player.draw(screen, debug)
+            [platform.draw(screen) for platform in platforms]
+        
+        elif gamemode == Gamemode.WIN:
+            wintxt = pygame.font.SysFont("courier new", 32).render("you win (also you are dead)", True, (0, 0, 0))
+            screen.blit(wintxt, ((screen.get_width() - wintxt.get_width()) / 2, (screen.get_height() - wintxt.get_height()) / 2))
+
         pygame.display.update()
         clock.tick(60)
     pygame.quit()
 
 if __name__ == "__main__":
     main()
-    sys.exit()

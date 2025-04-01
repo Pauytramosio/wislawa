@@ -4,3 +4,4 @@ def static() -> dict:
         return json.load(f)
 
 static: dict = static()
+static["player-damage-modifier"] = 3
