@@ -93,7 +93,6 @@ class Player:
             self.grav = -20 if keys[self.keys.up] else 0
 
         self.hitbox = next_hitbox
-        print(keys[self.keys.up])
 
 def main() -> None:
     pygame.init()
